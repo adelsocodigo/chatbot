@@ -16,7 +16,7 @@ async function sendMessage() {
 
   // Llamar a la API de OpenAI (vía Netlify Function)
   try {
-    const response = await fetch('/.netlify/functions/process-chat', {
+    const response = await fetch('https://https://iachatbot.netlify.app//.netlify/functions/process-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userInput })

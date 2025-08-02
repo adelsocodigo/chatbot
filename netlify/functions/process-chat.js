@@ -2,7 +2,7 @@ const { OpenAI } = require('openai');
 
 exports.handler = async (event, context) => {
   // Solo aceptar peticiones POST
-  if (event.httpMethod !== 'POST") {
+  if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       body: JSON.stringify({ error: "Método no permitido" }),
@@ -44,3 +44,4 @@ exports.handler = async (event, context) => {
       }),
     };
   }
+   }
