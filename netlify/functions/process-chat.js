@@ -1,30 +1,46 @@
 const { OpenAI } = require('openai');
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+exports.handler = async (event, context) => {
+  // Solo aceptar peticiones POST
+  if (event.httpMethod !== 'POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Método no permitido" }),
+    };
   }
 
-  const { message } = JSON.parse(event.body);
-  const openai = new OpenAI(process.env.OPENAI_API_KEY);
-
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
+    const { message } = JSON.parse(event.body);
+    
+    // Configura OpenAI
+    const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+    // Llamada a la API
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", // Usa este si no tienes acceso a GPT-4
       messages: [
         {
           role: "system",
-          content: "Eres un asistente para agendar citas. Pide confirmación de fecha, hora y servicio antes de guardar."
+          content: "Eres un asistente de citas. Responde en menos de 50 palabras."
         },
         { role: "user", content: message }
       ],
+      max_tokens: 100, // Limita la respuesta para evitar timeouts
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ reply: response.choices[0].message.content }),
+      body: JSON.stringify({ reply: completion.choices[0].message.content }),
     };
   } catch (error) {
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    // Log del error para Netlify
+    console.error("Error en la función:", error);
+    
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ 
+        error: "Error al procesar la solicitud",
+        details: error.message 
+      }),
+    };
   }
-};
