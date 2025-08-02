@@ -16,11 +16,11 @@ async function sendMessage() {
 
   // Llamar a la API de OpenAI (vía Netlify Function)
   try {
-    const response = await fetch('https://https://iachatbot.netlify.app//.netlify/functions/process-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userInput })
-    });
+    const response = await fetch('https://iachatbot.netlify.app/.netlify/functions/process-chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message: userInput })
+});
     const data = await response.json();
     displayMessage(data.reply, 'bot-message');
   } catch (error) {
