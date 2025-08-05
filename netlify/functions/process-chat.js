@@ -1,65 +1,67 @@
-const { OpenAI } = require('openai');
+const HF_API_KEY = process.env.HF_API_KEY; // Asegúrate de tener esta variable en Netlify
 
-exports.handler = async (event, context) => {
-  // Headers CORS que permiten solicitudes desde cualquier origen (*)
+exports.handler = async (event) => {
+  // Configuración CORS
   const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://iachatbot.netlify.app/',
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
-  // Manejar solicitudes OPTIONS para CORS preflight
+  // Manejar preflight OPTIONS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ message: "CORS preflight" }),
+      body: JSON.stringify({ message: "Preflight CORS" })
     };
   }
 
-  // Solo aceptar peticiones POST
+  // Solo aceptar POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Método no permitido" }),
+      body: JSON.stringify({ error: "Método no permitido" })
     };
   }
 
   try {
     const { message } = JSON.parse(event.body);
-    
-    // Configura OpenAI
-    const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-    // Llamada a la API
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "Eres un asistente de citas. Responde en menos de 50 palabras."
+    // Llamada a Hugging Face
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1",
+      {
+        method: "POST",
+        headers: { 
+          "Authorization": `Bearer ${HF_API_KEY}`,
+          "Content-Type": "application/json"
         },
-        { role: "user", content: message }
-      ],
-      max_tokens: 100,
-    });
+        body: JSON.stringify({ 
+          inputs: `[INST] Eres un asistente de citas. Responde concisamente. Usuario pregunta: ${message} [/INST]`
+        })
+      }
+    );
+
+    if (!response.ok) throw new Error(`Error HF: ${response.statusText}`);
+
+    const data = await response.json();
+    const reply = data[0]?.generated_text || "No puedo responder ahora. Intenta más tarde.";
 
     return {
       statusCode: 200,
-      headers: corsHeaders, // Añadir headers aquí
-      body: JSON.stringify({ reply: completion.choices[0].message.content }),
+      headers: corsHeaders,
+      body: JSON.stringify({ reply })
     };
   } catch (error) {
-    console.error("Error en la función:", error);
-    
     return {
       statusCode: 500,
-      headers: corsHeaders, // Añadir headers en errores también
+      headers: corsHeaders,
       body: JSON.stringify({ 
         error: "Error al procesar la solicitud",
         details: error.message 
-      }),
+      })
     };
   }
 };
